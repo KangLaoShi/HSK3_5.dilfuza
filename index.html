@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSK 3 Standard Course - Lesson 5</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* Custom styles for 3D flip card */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- Icons Components (Replacing lucide-react for single file portability) ---
+        const Icon = ({ children, size = 24, className = "", ...props }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+                {...props}
+            >
+                {children}
+            </svg>
+        );
+
+        const BookOpen = (props) => <Icon {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></Icon>;
+        const GraduationCap = (props) => <Icon {...props}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></Icon>;
+        const MessageCircle = (props) => <Icon {...props}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></Icon>;
+        const PlayCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+        const XCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></Icon>;
+        const ChevronLeft = (props) => <Icon {...props}><polyline points="15 18 9 12 15 6"/></Icon>;
+        const ChevronRight = (props) => <Icon {...props}><polyline points="9 18 15 12 9 6"/></Icon>;
+        const RefreshCw = (props) => <Icon {...props}><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></Icon>;
+        const Home = (props) => <Icon {...props}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
+        const Volume2 = (props) => <Icon {...props}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></Icon>;
+
+        // --- Main App Component ---
+        const HSKApp = () => {
+          const [activeTab, setActiveTab] = useState('home');
+
+          // Content Data from PDF
+          const lessonTitle = "我最近越来越胖了";
+          const lessonSubtitle = "Oxirgi paytlarda borgan sari semirib ketyapman";
+          
+          const vocabulary = [
+            { id: 1, hanzi: "发烧", pinyin: "fā shāo", uzbek: "Isitmalamoq" },
+            { id: 2, hanzi: "为", pinyin: "wèi", uzbek: "Uchun (ko'makchi)" },
+            { id: 3, hanzi: "照顾", pinyin: "zhàogù", uzbek: "G'amxo'rlik qilmoq" },
+            { id: 4, hanzi: "用", pinyin: "yòng", uzbek: "Foydalanmoq / Kerak bo'lmoq" },
+            { id: 5, hanzi: "感冒", pinyin: "gǎnmào", uzbek: "Shamollamoq" },
+            { id: 6, hanzi: "季节", pinyin: "jìjié", uzbek: "Fasl" },
+            { id: 7, hanzi: "当然", pinyin: "dāngrán", uzbek: "Albatta" },
+            { id: 8, hanzi: "春(天)", pinyin: "chūn (tiān)", uzbek: "Bahor" },
+            { id: 9, hanzi: "草", pinyin: "cǎo", uzbek: "O't-o'lan, o'simlik" },
+            { id: 10, hanzi: "夏(天)", pinyin: "xià (tiān)", uzbek: "Yoz fasli" },
+            { id: 11, hanzi: "裙子", pinyin: "qúnzi", uzbek: "Ko'ylak (ayol), yubka" },
+            { id: 12, hanzi: "最近", pinyin: "zuìjìn", uzbek: "Oxirgi paytlarda / Yaqinda" },
+            { id: 13, hanzi: "越", pinyin: "yuè", uzbek: "Borgan sari" }
+          ];
+
+          const dialogues = [
+            {
+              id: 1,
+              title: "在小丽家 (Siao Lining uyida)",
+              roles: [
+                { 
+                  name: "朋友", 
+                  text: "我听说你身体不舒服，怎么了？", 
+                  pinyin: "Wǒ tīngshuō nǐ shēntǐ bù shūfu, zěnme le?", 
+                  trans: "Eshitishimcha mazang yo'q ekan, nima bo'ldi?",
+                  ru: "Я слышал, тебе нездоровится, что случилось?",
+                  en: "I heard you're not feeling well, what happened?"
+                },
+                { 
+                  name: "小丽", 
+                  text: "前几天有点儿发烧，现在好多了。", 
+                  pinyin: "Qián jǐ tiān yǒudiǎnr fāshāo, xiànzài hǎoduō le.", 
+                  trans: "Bir necha kun oldin biroz isitmaladim, hozir ancha yaxshiman.",
+                  ru: "Пару дней назад была небольшая температура, сейчас уже намного лучше.",
+                  en: "I had a slight fever a few days ago, I'm much better now."
+                },
+                { 
+                  name: "朋友", 
+                  text: "喝杯茶吧，这是我为你买的绿茶，很不错。", 
+                  pinyin: "Hē bēi chá ba, zhè shì wǒ wèi nǐ mǎi de lǜchá, hěn búcuò.", 
+                  trans: "Bir piyola choy ich, bu men sen uchun sotib olgan ko'k choy, juda yaxshi.",
+                  ru: "Выпей чаю, это зеленый чай, который я купил для тебя, он очень хороший.",
+                  en: "Have a cup of tea. This is green tea I bought for you, it's very good."
+                },
+                { 
+                  name: "小丽", 
+                  text: "谢谢，我要吃药，不喝茶了。", 
+                  pinyin: "Xièxie, wǒ yào chī yào, bù hē chá le.", 
+                  trans: "Rahmat, men dori ichishim kerak, choy ichmayman.",
+                  ru: "Спасибо, мне нужно принять лекарство, я не буду чай.",
+                  en: "Thanks, I need to take medicine, I won't drink tea."
+                },
+                { 
+                  name: "朋友", 
+                  text: "那喝杯水吧。", 
+                  pinyin: "Nà hē bēi shuǐ ba.", 
+                  trans: "Unda bir stakan suv ich.",
+                  ru: "Тогда выпей стакан воды.",
+                  en: "Then have a glass of water."
+                },
+                { 
+                  name: "小丽", 
+                  text: "好的。", 
+                  pinyin: "Hǎo de.", 
+                  trans: "Xo'p bo'ladi.",
+                  ru: "Хорошо.",
+                  en: "Okay."
+                }
+              ]
+            },
+            {
+              id: 2,
+              title: "在打电话 (Telefonda)",
+              roles: [
+                { 
+                  name: "周太太", 
+                  text: "对不起，我明天不能和你们出去玩儿了。", 
+                  pinyin: "Duìbuqǐ, wǒ míngtiān bù néng hé nǐmen chūqu wánr le.", 
+                  trans: "Kechirasiz, men ertaga sizlar bilan aylangani chiqa olmayman.",
+                  ru: "Извините, я завтра не смогу пойти с вами гулять.",
+                  en: "I'm sorry, I can't go out and play with you guys tomorrow."
+                },
+                { 
+                  name: "张太太", 
+                  text: "为什么？怎么了？", 
+                  pinyin: "Wèishénme? Zěnme le?", 
+                  trans: "Nega? Nima bo'ldi?",
+                  ru: "Почему? Что случилось?",
+                  en: "Why? What's wrong?"
+                },
+                { 
+                  name: "周太太", 
+                  text: "我儿子生病了，我要在家照顾他。", 
+                  pinyin: "Wǒ érzi shēngbìng le, wǒ yào zài jiā zhàogù tā.", 
+                  trans: "O'g'lim kasal bo'lib qoldi, men uyda unga qarashim kerak.",
+                  ru: "Мой сын заболел, я должна остаться дома и ухаживать за ним.",
+                  en: "My son is sick, I have to stay home and take care of him."
+                },
+                { 
+                  name: "张太太", 
+                  text: "他吃药了吗？要不要去医院？", 
+                  pinyin: "Tā chī yào le ma? Yào bu yào qù yīyuàn?", 
+                  trans: "U dori ichdimi? Kasalxonaga borish kerak emasmi?",
+                  ru: "Он принял лекарство? Нужно ли ехать в больницу?",
+                  en: "Did he take medicine? Does he need to go to the hospital?"
+                },
+                { 
+                  name: "周太太", 
+                  text: "不用去医院，昨天吃了感冒药，现在好一些了。", 
+                  pinyin: "Búyòng qù yīyuàn, zuótiān chīle gǎnmào yào, xiànzài hǎo yìxiē le.", 
+                  trans: "Kasalxonaga borish shart emas, kecha shamollashga qarshi dori ichdi, hozir biroz yaxshi.",
+                  ru: "В больницу не нужно, вчера он выпил лекарство от простуды, сейчас ему лучше.",
+                  en: "No need to go to the hospital. He took cold medicine yesterday and is better now."
+                },
+                { 
+                  name: "张太太", 
+                  text: "那我们下次再一起出去玩儿吧。", 
+                  pinyin: "Nà wǒmen xiàcì zài yìqǐ chūqu wánr ba.", 
+                  trans: "Unda keyingi safar birga aylangani chiqarmiz.",
+                  ru: "Тогда пойдем гулять вместе в следующий раз.",
+                  en: "Then let's go out together next time."
+                }
+              ]
+            },
+            {
+              id: 3,
+              title: "在小刚家 (Siao Gangning uyida)",
+              roles: [
+                { 
+                  name: "小丽", 
+                  text: "你最喜欢哪个季节？", 
+                  pinyin: "Nǐ zuì xǐhuan nǎge jìjié?", 
+                  trans: "Sen qaysi faslni eng yaxshi ko'rasan?",
+                  ru: "Какое время года тебе нравится больше всего?",
+                  en: "Which season do you like the most?"
+                },
+                { 
+                  name: "小刚", 
+                  text: "当然是春天，天气不那么冷了，草和树都绿了，花也开了。", 
+                  pinyin: "Dāngrán shì chūntiān, tiānqì bú nàme lěng le, cǎo hé shù dōu lǜ le, huā yě kāi le.", 
+                  trans: "Albatta bahorni, havo unchalik sovuq emas, o'tlar va daraxtlar ko'kardi, gullar ham ochildi.",
+                  ru: "Конечно, весна. Погода уже не такая холодная, трава и деревья зазеленели, цветы распустились.",
+                  en: "Of course it's spring. The weather isn't that cold anymore, the grass and trees are green, and flowers have bloomed."
+                },
+                { 
+                  name: "小丽", 
+                  text: "我最喜欢夏天，因为我可以穿漂亮的裙子了。", 
+                  pinyin: "Wǒ zuì xǐhuan xiàtiān, yīnwèi wǒ kěyǐ chuān piàoliang de qúnzi le.", 
+                  trans: "Men yozni eng yaxshi ko'raman, chunki men chiroyli yubkalar kiyishim mumkin.",
+                  ru: "А я больше всего люблю лето, потому что могу носить красивые юбки.",
+                  en: "I like summer the most because I can wear beautiful skirts."
+                },
+                { 
+                  name: "小刚", 
+                  text: "那我也喜欢夏天了。", 
+                  pinyin: "Nà wǒ yě xǐhuan xiàtiān le.", 
+                  trans: "Unda men ham yozni yaxshi ko'rib qoldim.",
+                  ru: "Тогда мне тоже нравится лето.",
+                  en: "Then I like summer too."
+                },
+                { 
+                  name: "小丽", 
+                  text: "怎么？你也有漂亮的裙子？", 
+                  pinyin: "Zěnme? Nǐ yě yǒu piàoliang de qúnzi?", 
+                  trans: "Nega? Sendayam chiroyli yubka bormi?",
+                  ru: "Как? У тебя тоже есть красивые юбки?",
+                  en: "What? Do you have beautiful skirts too?"
+                },
+                { 
+                  name: "小刚", 
+                  text: "不，我喜欢看你穿漂亮的裙子。", 
+                  pinyin: "Bù, wǒ xǐhuan kàn nǐ chuān piàoliang de qúnzi.", 
+                  trans: "Yo'q, men sening chiroyli yubka kiyishingni ko'rishni yaxshi ko'raman.",
+                  ru: "Нет, мне нравится смотреть, как ты носишь красивые юбки.",
+                  en: "No, I like watching you wear beautiful skirts."
+                }
+              ]
+            },
+            {
+              id: 4,
+              title: "在小刚家 (Siao Gangning uyida - 2)",
+              roles: [
+                { 
+                  name: "小丽", 
+                  text: "我最近越来越胖了。", 
+                  pinyin: "Wǒ zuìjìn yuè lái yuè pàng le.", 
+                  trans: "Men oxirgi paytlarda borgan sari semirib ketyapman.",
+                  ru: "В последнее время я становлюсь все толще.",
+                  en: "I'm getting fatter and fatter lately."
+                },
+                { 
+                  name: "小刚", 
+                  text: "谁说的？我觉得你越来越漂亮了。", 
+                  pinyin: "Shéi shuō de? Wǒ juéde nǐ yuè lái yuè piàoliang le.", 
+                  trans: "Kim aytdi? Menimcha sen borgan sari chiroyli bo'lib ketyapsan.",
+                  ru: "Кто это сказал? Я думаю, ты становишься все красивее.",
+                  en: "Who said that? I think you are becoming more and more beautiful."
+                },
+                { 
+                  name: "小丽", 
+                  text: "你看，这条裙子是去年买的，今年就不能穿了。", 
+                  pinyin: "Nǐ kàn, zhè tiáo qúnzi shì qùnián mǎi de, jīnnián jiù bù néng chuān le.", 
+                  trans: "Qara, bu yubka o'tgan yili sotib olingan, bu yil esa sig'may qoldi (kiyolmayapman).",
+                  ru: "Смотри, эту юбку я купила в прошлом году, а в этом году уже не могу надеть.",
+                  en: "Look, I bought this skirt last year, and I can't wear it this year."
+                },
+                { 
+                  name: "小刚", 
+                  text: "那是因为你吃得太多了，少吃点儿吧。", 
+                  pinyin: "Nà shì yīnwèi nǐ chī de tài duō le, shǎo chī diǎnr ba.", 
+                  trans: "Bu ko'p ovqat yeyayotganing uchun, kamroq ye.",
+                  ru: "Это потому что ты слишком много ешь, ешь поменьше.",
+                  en: "That's because you eat too much. Eat a little less."
+                },
+                { 
+                  name: "小丽", 
+                  text: "我做的饭越来越好吃，我能少吃吗？", 
+                  pinyin: "Wǒ zuò de fàn yuè lái yuè hǎochī, wǒ néng shǎo chī ma?", 
+                  trans: "Mening pishirgan ovqatlarim borgan sari mazali bo'lyapti, kam yeb bo'ladimi?",
+                  ru: "Я готовлю все вкуснее и вкуснее, разве я могу есть меньше?",
+                  en: "The food I cook is getting tastier and tastier, how can I eat less?"
+                }
+              ]
+            }
+          ];
+
+          const grammarPoints = [
+            {
+              title: "1. '了' (le) - Holat o'zgarishi / Change of State",
+              explanation: {
+                uz: "Gap oxirida kelgan '了' holatning o'zgarganini yoki yangi vaziyat yuzaga kelganini bildiradi.",
+                ru: "Частица '了' в конце предложения указывает на изменение состояния или возникновение новой ситуации.",
+                en: "The particle '了' at the end of a sentence indicates a change of state or the emergence of a new situation."
+              },
+              examples: [
+                { 
+                  zh: "我现在没钱了。", 
+                  uz: "Menda pul qolmadi (oldin bor edi, hozir yo'q).",
+                  ru: "У меня теперь нет денег.",
+                  en: "I don't have money now."
+                },
+                { 
+                  zh: "天气不那么冷了。", 
+                  uz: "Havo unchalik sovuq emas (sovuq edi, endi ilidi).",
+                  ru: "Погода теперь не такая холодная.",
+                  en: "The weather is not that cold anymore."
+                }
+              ]
+            },
+            {
+              title: "2. 越来越 + Sifat/Fe'l (Yuè lái yuè...)",
+              explanation: {
+                uz: "Vaqt o'tishi bilan darajaning o'zgarishini bildiradi. O'zbek tilida 'borgan sari' deb tarjima qilinadi. E'tibor bering: Sifat oldidan 'hěn' (很) kabi daraja ravishlari qo'yilmaydi.",
+                ru: "Обозначает изменение степени с течением времени. Переводится как 'все больше и больше' или 'чем дальше, тем...'. Обратите внимание: перед прилагательным нельзя использовать наречия степени, такие как 'hěn' (很).",
+                en: "Indicates a change in degree over time. Translated as 'more and more'. Note: Degree adverbs like 'hěn' (很) cannot be used before the adjective."
+              },
+              examples: [
+                { 
+                  zh: "我越来越胖了。", 
+                  uz: "Men borgan sari semirib ketyapman.",
+                  ru: "Я становлюсь все толще.",
+                  en: "I am getting fatter and fatter."
+                },
+                { 
+                  zh: "天气越来越热。", 
+                  uz: "Havo borgan sari isib boryapti.",
+                  ru: "Погода становится все жарче.",
+                  en: "The weather is getting hotter and hotter."
+                },
+                { 
+                  zh: "我越来越喜欢运动。", 
+                  uz: "Men sportni borgan sari yaxshi ko'ryapman.",
+                  ru: "Мне все больше нравится заниматься спортом.",
+                  en: "I like exercising more and more."
+                }
+              ]
+            }
+          ];
+
+          const quizQuestions = [
+            { id: 1, question: "'发烧' (fā shāo) so'zining ma'nosi nima?", options: ["Shamollamoq", "Isitmalamoq", "Yo'talmoq", "Bosh og'rig'i"], answer: 1 },
+            { id: 2, question: "'Fasl' so'zining xitoycha tarjimasi nima?", options: ["季节 (jìjié)", "天气 (tiānqì)", "时间 (shíjiān)", "月 (yuè)"], answer: 0 },
+            { id: 3, question: "Bo'sh joyni to'ldiring: 我最近 ______ 胖了。", options: ["很", "真", "越来越", "最"], answer: 2 },
+            { id: 4, question: "Zhou xonim (周太太) nima uchun tashqariga chiqolmaydi?", options: ["U kasal", "O'g'li kasal", "Yomg'ir yog'yapti", "Ishlashi kerak"], answer: 1 },
+            { id: 5, question: "'当然' (dāngrán) nima degani?", options: ["Albatta", "Balki", "Mumkin", "Yo'q"], answer: 0 },
+            { id: 6, question: "'草和树都绿了' gapida '了' nimani bildiradi?", options: ["O'tmish zamon", "Holat o'zgarishi", "Savol", "Buyruq"], answer: 1 },
+            { id: 7, question: "Xiao Li qaysi faslni yoqtiradi?", options: ["Bahor", "Kuz", "Qish", "Yoz"], answer: 3 },
+            { id: 8, question: "'裙子' (qúnzi) nima?", options: ["Shim", "Futbolka", "Yubka/Ko'ylak", "Poyabzal"], answer: 2 },
+            { id: 9, question: "Xiao Li nima uchun choy ichmadi?", options: ["Choy yoqtirmaydi", "Dori ichishi kerak", "Suv yo'q", "Qorni to'q"], answer: 1 },
+            { id: 10, question: "'G'amxo'rlik qilmoq' xitoy tilida?", options: ["帮忙 (bāngmáng)", "照顾 (zhàogù)", "看 (kàn)", "爱 (ài)"], answer: 1 },
+            { id: 11, question: "Bo'sh joyni to'ldiring: 天气不那么冷___。", options: ["吗", "呢", "了", "的"], answer: 2 },
+            { id: 12, question: "'越来越' dan keyin qanday so'z kelishi mumkin?", options: ["Ot", "Sifat yoki his-tuyg'u fe'li", "Faqat fe'l", "Faqat olmosh"], answer: 1 },
+            { id: 13, question: "'感冒' (gǎnmào) nima?", options: ["Shamollamoq", "Yiqilmoq", "Xursand bo'lmoq", "Kasalxona"], answer: 0 },
+            { id: 14, question: "Xiao Gang nima uchun Xiaoni yozni yoqtirishini aytdi?", options: ["Suzishni yoqtiradi", "Muzqaymoq yeydi", "Xiao Li yubka kiyadi", "Havo issiq"], answer: 2 },
+            { id: 15, question: "'最近' (zuìjìn) ma'nosi?", options: ["Uzoqda", "Yaqinda/Oxirgi paytda", "Ertaga", "Kecha"], answer: 1 },
+          ];
+
+          // Helper function to play audio
+          const handlePlayAudio = (text) => {
+            if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance(text);
+              utterance.lang = 'zh-CN'; 
+              utterance.rate = 0.8; 
+              window.speechSynthesis.speak(utterance);
+            } else {
+              alert("Browser does not support text-to-speech / Brauzer ovozli o'qishni qo'llab-quvvatlamaydi");
+            }
+          };
+
+          // --- Sub Components ---
+          const Flashcards = () => {
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isFlipped, setIsFlipped] = useState(false);
+
+            const nextCard = () => {
+              setIsFlipped(false);
+              setCurrentIndex((prev) => (prev + 1) % vocabulary.length);
+            };
+
+            const prevCard = () => {
+              setIsFlipped(false);
+              setCurrentIndex((prev) => (prev - 1 + vocabulary.length) % vocabulary.length);
+            };
+
+            return (
+              <div className="flex flex-col items-center justify-center p-6 bg-blue-50 rounded-xl shadow-sm">
+                <div className="w-full max-w-md h-64 perspective-1000 cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
+                  <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+                    {/* Front */}
+                    <div className={`absolute w-full h-full bg-white rounded-2xl shadow-lg flex flex-col items-center justify-center backface-hidden border-2 border-blue-200 ${isFlipped ? 'opacity-0' : 'opacity-100'}`}>
+                      <h3 className="text-gray-500 text-lg font-medium mb-2">Xitoycha</h3>
+                      <div className="flex items-center gap-3">
+                        <div className="text-6xl font-bold text-blue-600 mb-4">{vocabulary[currentIndex].hanzi}</div>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlayAudio(vocabulary[currentIndex].hanzi);
+                          }}
+                          className="p-2 bg-blue-100 rounded-full text-blue-600 hover:bg-blue-200 transition mb-4"
+                          title="Tinglash"
+                        >
+                          <Volume2 size={24} />
+                        </button>
+                      </div>
+                      <div className="text-gray-400 text-sm">(Bosing va ma'nosini ko'ring)</div>
+                    </div>
+                    {/* Back */}
+                    <div className={`absolute w-full h-full bg-blue-600 text-white rounded-2xl shadow-lg flex flex-col items-center justify-center backface-hidden rotate-y-180 ${isFlipped ? 'opacity-100' : 'opacity-0'}`}>
+                      <h3 className="text-blue-200 text-lg font-medium mb-2">Pinyin & O'zbekcha</h3>
+                      <div className="text-3xl font-bold mb-2">{vocabulary[currentIndex].pinyin}</div>
+                      <div className="text-2xl font-semibold text-center px-4">{vocabulary[currentIndex].uzbek}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex space-x-8 mt-8">
+                  <button onClick={prevCard} className="p-3 bg-white rounded-full shadow hover:bg-gray-100 text-blue-600">
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div className="flex items-center text-gray-600 font-medium">
+                    {currentIndex + 1} / {vocabulary.length}
+                  </div>
+                  <button onClick={nextCard} className="p-3 bg-white rounded-full shadow hover:bg-gray-100 text-blue-600">
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
+              </div>
+            );
+          };
+
+          const Quiz = () => {
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [score, setScore] = useState(0);
+            const [showScore, setShowScore] = useState(false);
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [isCorrect, setIsCorrect] = useState(null);
+
+            const handleOptionClick = (index) => {
+              if (selectedOption !== null) return;
+              setSelectedOption(index);
+              
+              if (index === quizQuestions[currentQuestion].answer) {
+                setScore(score + 1);
+                setIsCorrect(true);
+              } else {
+                setIsCorrect(false);
+              }
+            };
+
+            const nextQuestion = () => {
+              setSelectedOption(null);
+              setIsCorrect(null);
+              const nextQ = currentQuestion + 1;
+              if (nextQ < quizQuestions.length) {
+                setCurrentQuestion(nextQ);
+              } else {
+                setShowScore(true);
+              }
+            };
+
+            const resetQuiz = () => {
+              setCurrentQuestion(0);
+              setScore(0);
+              setShowScore(false);
+              setSelectedOption(null);
+              setIsCorrect(null);
+            };
+
+            return (
+              <div className="max-w-2xl mx-auto p-4">
+                <div className="mb-4 text-center">
+                    <h2 className="text-xl font-bold text-blue-800">Dilfuza Kāng lǎo shī bilan xitoy tilini o'rganmiz</h2>
+                    <p className="text-gray-500 text-sm">Test 15 ta savoldan iborat</p>
+                </div>
+                {showScore ? (
+                  <div className="text-center bg-white p-8 rounded-xl shadow-lg border border-blue-100">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Natija</h2>
+                    <div className="text-5xl font-bold text-blue-600 mb-4">
+                      {score} / {quizQuestions.length}
+                    </div>
+                    <p className="text-gray-600 mb-6">
+                      {score > 12 ? "Ajoyib natija! 🎉" : score > 8 ? "Yaxshi, lekin yana mashq qiling. 👍" : "Qayta urinib ko'ring. 💪"}
+                    </p>
+                    <button onClick={resetQuiz} className="flex items-center justify-center w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                      <RefreshCw className="mr-2" size={20} /> Qayta boshlash
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                    <div className="flex justify-between items-center mb-6">
+                      <span className="text-sm font-semibold text-gray-500">Savol {currentQuestion + 1}/{quizQuestions.length}</span>
+                      <span className="text-sm font-bold text-blue-600">Ball: {score}</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-6">{quizQuestions[currentQuestion].question}</h3>
+                    <div className="space-y-3">
+                      {quizQuestions[currentQuestion].options.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleOptionClick(index)}
+                          className={`w-full text-left p-4 rounded-lg border transition-all ${
+                            selectedOption === null 
+                              ? 'hover:bg-blue-50 border-gray-200' 
+                              : index === quizQuestions[currentQuestion].answer 
+                                ? 'bg-green-100 border-green-500 text-green-800'
+                                : selectedOption === index 
+                                  ? 'bg-red-100 border-red-500 text-red-800'
+                                  : 'bg-gray-50 border-gray-200 opacity-50'
+                          }`}
+                          disabled={selectedOption !== null}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{option}</span>
+                            {selectedOption !== null && index === quizQuestions[currentQuestion].answer && <CheckCircle size={20} className="text-green-600" />}
+                            {selectedOption === index && index !== quizQuestions[currentQuestion].answer && <XCircle size={20} className="text-red-600" />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    {selectedOption !== null && (
+                      <button onClick={nextQuestion} className="mt-6 w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                        {currentQuestion === quizQuestions.length - 1 ? "Natijani ko'rish" : "Keyingi savol"}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          // --- Render ---
+          return (
+            <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+              {/* Header */}
+              <header className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 shadow-lg">
+                <div className="max-w-4xl mx-auto text-center">
+                  <div className="text-blue-200 font-medium mb-2 text-sm md:text-base">Dilfuza Kāng lǎo shī bilan xitoy tilini o'rganmiz</div>
+                  <h1 className="text-3xl font-bold mb-2">{lessonTitle}</h1>
+                  <p className="text-blue-100 text-lg">{lessonSubtitle}</p>
+                </div>
+              </header>
+
+              {/* Navigation */}
+              <nav className="bg-white shadow-sm sticky top-0 z-10 overflow-x-auto">
+                <div className="max-w-4xl mx-auto flex justify-around p-2 min-w-max">
+                  <button 
+                    onClick={() => setActiveTab('home')} 
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${activeTab === 'home' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <Home size={20} /> <span>Bosh sahifa</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('vocab')} 
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${activeTab === 'vocab' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <BookOpen size={20} /> <span>Lug'at</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('dialogue')} 
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${activeTab === 'dialogue' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <MessageCircle size={20} /> <span>Muloqot</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('grammar')} 
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${activeTab === 'grammar' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <GraduationCap size={20} /> <span>Grammatika</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('quiz')} 
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${activeTab === 'quiz' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <PlayCircle size={20} /> <span>Test</span>
+                  </button>
+                </div>
+              </nav>
+
+              {/* Main Content */}
+              <main className="flex-grow max-w-4xl mx-auto w-full p-4 md:p-6">
+                
+                {activeTab === 'home' && (
+                  <div className="text-center space-y-8 animate-fade-in">
+                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-blue-50">
+                      <h2 className="text-2xl font-bold text-gray-800 mb-4">Xush kelibsiz!</h2>
+                      <p className="text-gray-600 mb-6">HSK 3-daraja 5-dars interaktiv o'quv dasturiga xush kelibsiz. Ushbu dars orqali siz "borgan sari" (越来越) grammatikasi va holat o'zgarishi haqida o'rganasiz.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div onClick={() => setActiveTab('vocab')} className="cursor-pointer bg-green-50 p-4 rounded-xl hover:shadow-md transition border border-green-100">
+                          <h3 className="font-bold text-green-700 text-lg">📝 13 Yangi so'z</h3>
+                          <p className="text-sm text-green-600">Yangi so'zlarni o'rganing</p>
+                        </div>
+                        <div onClick={() => setActiveTab('dialogue')} className="cursor-pointer bg-purple-50 p-4 rounded-xl hover:shadow-md transition border border-purple-100">
+                          <h3 className="font-bold text-purple-700 text-lg">🗣️ 4 ta Dialog</h3>
+                          <p className="text-sm text-purple-600">Muloqotni mashq qiling</p>
+                        </div>
+                        <div onClick={() => setActiveTab('grammar')} className="cursor-pointer bg-orange-50 p-4 rounded-xl hover:shadow-md transition border border-orange-100">
+                          <h3 className="font-bold text-orange-700 text-lg">📚 Grammatika</h3>
+                          <p className="text-sm text-orange-600">"了" va "越来越"</p>
+                        </div>
+                        <div onClick={() => setActiveTab('quiz')} className="cursor-pointer bg-red-50 p-4 rounded-xl hover:shadow-md transition border border-red-100">
+                          <h3 className="font-bold text-red-700 text-lg">✅ 15 ta Savol</h3>
+                          <p className="text-sm text-red-600">Bilimingizni sinang</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'vocab' && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">生词闪卡 (Yangi so'zlar)</h2>
+                    <Flashcards />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-8">
+                      {vocabulary.map((word) => (
+                        <div key={word.id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-bold text-blue-600">{word.hanzi}</span>
+                            <button 
+                              onClick={() => handlePlayAudio(word.hanzi)}
+                              className="p-1 text-blue-400 hover:text-blue-600 transition"
+                              title="Tinglash"
+                            >
+                              <Volume2 size={16} />
+                            </button>
+                          </div>
+                          <span className="text-sm text-gray-500">{word.pinyin}</span>
+                          <span className="text-sm font-medium text-gray-700 text-center mt-1">{word.uzbek}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'dialogue' && (
+                  <div className="space-y-8">
+                     <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">课文 (Matnlar)</h2>
+                    {dialogues.map((dialogue) => (
+                      <div key={dialogue.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="bg-blue-50 p-4 border-b border-blue-100">
+                          <h3 className="font-bold text-lg text-blue-800">{dialogue.title}</h3>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          {dialogue.roles.map((role, idx) => (
+                            <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-4 pb-4 border-b border-gray-50 last:border-0">
+                              <div className="sm:w-16 font-bold text-gray-700 flex-shrink-0">{role.name}:</div>
+                              <div className="flex-grow">
+                                <div className="flex items-start gap-2">
+                                    <p className="text-lg font-medium text-gray-900 mb-1">{role.text}</p>
+                                    <button 
+                                        onClick={() => handlePlayAudio(role.text)}
+                                        className="mt-1 p-1 text-blue-400 hover:text-blue-600 transition flex-shrink-0"
+                                        title="Tinglash"
+                                    >
+                                        <Volume2 size={18} />
+                                    </button>
+                                </div>
+                                <p className="text-sm text-blue-600 mb-2">{role.pinyin}</p>
+                                <div className="space-y-1">
+                                    <p className="text-sm text-gray-600 italic">🇺🇿 {role.trans}</p>
+                                    <p className="text-sm text-gray-600 italic">🇷🇺 {role.ru}</p>
+                                    <p className="text-sm text-gray-600 italic">🇬🇧 {role.en}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'grammar' && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">语法 (Grammatika)</h2>
+                    {grammarPoints.map((point, idx) => (
+                      <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 className="text-xl font-bold text-blue-700 mb-3">{point.title}</h3>
+                        <div className="space-y-2 mb-4">
+                            <p className="text-gray-700 leading-relaxed"><span className="font-bold text-blue-600 text-xs uppercase mr-2">UZ</span>{point.explanation.uz}</p>
+                            <p className="text-gray-700 leading-relaxed"><span className="font-bold text-red-600 text-xs uppercase mr-2">RU</span>{point.explanation.ru}</p>
+                            <p className="text-gray-700 leading-relaxed"><span className="font-bold text-green-600 text-xs uppercase mr-2">EN</span>{point.explanation.en}</p>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h4 className="font-semibold text-gray-600 mb-2">Misollar / Примеры / Examples:</h4>
+                          <ul className="space-y-4">
+                            {point.examples.map((ex, i) => (
+                              <li key={i} className="flex flex-col border-b border-gray-200 last:border-0 pb-2 last:pb-0">
+                                <span className="font-medium text-lg text-gray-800">{ex.zh}</span>
+                                <span className="text-sm text-gray-600 mt-1">🇺🇿 {ex.uz}</span>
+                                <span className="text-sm text-gray-600">🇷🇺 {ex.ru}</span>
+                                <span className="text-sm text-gray-600">🇬🇧 {ex.en}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'quiz' && <Quiz />}
+
+              </main>
+
+              {/* Footer */}
+              <footer className="bg-gray-800 text-gray-300 py-6 mt-12 text-center text-sm">
+                <div className="max-w-4xl mx-auto px-4">
+                    <p className="font-semibold text-white mb-1">HSK 3 Standard Course - Lesson 5</p>
+                    <p>© 2026 Dilfuza Kāng lǎo shī (telegram@diffila)</p>
+                </div>
+              </footer>
+            </div>
+          );
+        };
+
+        // Render App
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<HSKApp />);
+    </script>
+</body>
+</html>
